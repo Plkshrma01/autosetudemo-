@@ -195,8 +195,20 @@
   async function logout() { if(!state.client)return; stopLocationWatch(); clearRealtime(); const {error}=await state.client.auth.signOut(); if(error)toast(friendlyError(error),"error"); else {state.user=null;state.profile=null;showView("landing-view");toast("You are signed out.","success");} }
   function getLocation() {
     return new Promise((resolve,reject)=>{
-      if(!navigator.geolocation)return reject(new Error("This browser does not support location."));
-      navigator.geolocation.getCurrentPosition(pos=>resolve({lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy}),err=>reject(new Error(err.code===1?"Location permission was denied. Enter pickup manually.":"Could not get your location. Enter pickup manually.")),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+      if(!window.isSecureContext) return reject(new Error("Location requires a secure HTTPS page. Open AutoSetu using its https:// GitHub Pages address."));
+      if(!navigator.geolocation) return reject(new Error("This browser does not provide GPS location. You can still enter your pickup manually."));
+      navigator.geolocation.getCurrentPosition(
+        pos=>resolve({lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy}),
+        err=>{
+          const message = err.code===1
+            ? "Location permission is blocked for this website. You can allow it from the lock icon beside the address bar, or enter your pickup manually."
+            : err.code===2
+              ? "Your device could not determine its location. Check device Location Services, or enter your pickup manually."
+              : "GPS took too long to respond. Try again outdoors, or enter your pickup manually.";
+          reject(new Error(message));
+        },
+        {enableHighAccuracy:false,timeout:20000,maximumAge:60000}
+      );
     });
   }
   async function useCurrentLocation() {
@@ -230,9 +242,10 @@
     e.preventDefault();
     const pickup=$("pickup").value.trim(), destination=$("destination").value.trim(), vehicle=$("vehicle-type").value;
     const latRaw=$("pickup-lat").value,lngRaw=$("pickup-lng").value;
-    const lat=Number(latRaw),lng=Number(lngRaw);
+    const hasLat=latRaw!=="",hasLng=lngRaw!=="";
+    const lat=hasLat?Number(latRaw):null,lng=hasLng?Number(lngRaw):null;
     if(!pickup||!destination){toast("Enter both pickup and destination.","error");return;}
-    if(!latRaw||!lngRaw||!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180||(lat===0&&lng===0)){toast("Use the GPS button to attach a valid pickup location before requesting a ride.","error");return;}
+    if(hasLat!==hasLng || (hasLat&&(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180||(lat===0&&lng===0)))){toast("Pickup GPS data is incomplete. Use GPS again or clear the coordinates and enter the pickup manually.","error");return;}
     const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent="Requesting…";}
     try {
       const {data,error}=await state.client.rpc("request_ride",{p_pickup_location:pickup,p_destination:destination,p_pickup_latitude:lat,p_pickup_longitude:lng,p_destination_latitude:null,p_destination_longitude:null,p_vehicle_type:vehicle});
@@ -315,8 +328,9 @@
       <div class="dashboard-grid">
         <section class="card booking-card"><div class="card-heading"><span class="big-icon">⌖</span><div><h2>Book a local ride</h2><p>Choose where your journey starts and ends.</p></div></div>
           <form id="booking-form" class="stack-form">
-            <label>Pickup location<input id="pickup" required placeholder="Enter pickup or use GPS"></label>
-            <button type="button" class="btn btn-outline" id="use-location">⌖ Use my current location</button>
+            <label>Pickup location<input id="pickup" required placeholder="e.g. Model Town, Jalandhar"></label>
+            <button type="button" class="btn btn-outline" id="use-location">⌖ Use my current location (optional)</button>
+            <p class="muted small">GPS is optional. If location access is blocked, type a clear pickup address or landmark and continue.</p>
             <input type="hidden" id="pickup-lat"><input type="hidden" id="pickup-lng">
             <label>Destination<input id="destination" required placeholder="Where are you going?"></label>
             <label>Vehicle type<select id="vehicle-type"><option value="auto">Auto-rickshaw</option><option value="taxi">Taxi</option></select></label>
@@ -331,6 +345,7 @@
       <section class="section-block"><h2>Your carpool requests</h2>${myBookings?.length?myBookings.map(b=>`<article class="ride-card"><span class="status">${escapeHtml(b.status)}</span><h3>${escapeHtml(b.carpool?.pickup_location||"Journey")} → ${escapeHtml(b.carpool?.destination||"")}</h3><p class="muted">${b.seats_booked} seat(s) · ${b.carpool?.departure_time?new Date(b.carpool.departure_time).toLocaleString():""}</p>${b.status==="requested"?`<button class="btn btn-outline" data-carpool-cancel="${b.id}">Withdraw request</button>`:""}</article>`).join(""):'<p class="muted">No carpool requests yet.</p>'}</section>`;
     if(activeRide)initPassengerMap(activeRide);
     $("booking-form").addEventListener("submit",bookRide);$("use-location").addEventListener("click",useCurrentLocation);
+    $("pickup").addEventListener("input",()=>{ $("pickup-lat").value=""; $("pickup-lng").value=""; state.location=null; });
     $("report-help").addEventListener("click",()=>showReportForm(root));
     root.querySelectorAll('[data-action="cancel-ride"]').forEach(b=>b.addEventListener("click",()=>cancelRide(b.dataset.id)));
     root.querySelectorAll('[data-action="start-code"]').forEach(b=>b.addEventListener("click",()=>requestOtp(b.dataset.id,"start")));
