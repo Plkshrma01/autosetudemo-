@@ -1,0 +1,12 @@
+-- Optional hardening notes and private storage setup.
+-- The table RLS policies are created in schema.sql.
+-- Create these private buckets in Supabase Storage UI:
+--   driver-documents (PRIVATE)
+--   profile-photos (PRIVATE or public only if you accept public profile photos)
+--
+-- Do not make driver documents public. For a production app, create narrowly scoped
+-- storage policies so drivers can upload only to a folder named with auth.uid(),
+-- and admins can review documents via authenticated signed URLs.
+--
+-- Enable Realtime for public.rides in Database > Publications. Keep RLS enabled.
+-- No policy here exposes OTP hashes; do not add broad SELECT policies to rides.
