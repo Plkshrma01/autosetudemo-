@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101820">
+  <meta name="description" content="AutoSetu — Your Local Ride, Connected.">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <title>AutoSetu — Your Local Ride, Connected</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="./config.js"></script>
+  <script defer src="./app.js?v=20261101-3"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" id="brand-home" aria-label="AutoSetu home">
+      <img src="./assets/autosetu-logo.svg" alt="" class="brand-mark">
+      <span><strong>AutoSetu</strong><small>Your Local Ride, Connected.</small></span>
+    </a>
+    <nav id="top-nav" aria-label="Main navigation">
+      <a href="#how-it-works">How it works</a>
+      <a href="#safety">Safety</a>
+      <button id="nav-login" class="btn btn-outline">Login / Sign up</button>
+      <button id="nav-logout" class="btn btn-outline hidden">Log out</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="landing-view" class="hero-wrap">
+      <div class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="live-dot"></span> Local rides, made simpler</span>
+          <h1>Your city.<br><em>Your ride.</em><br>Your AutoSetu.</h1>
+          <p>Connect with local auto-rickshaw and taxi drivers. Simple booking for everyday journeys.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-large" id="hero-book">Book a ride <span aria-hidden="true">→</span></button>
+            <button class="btn btn-dark btn-large" id="hero-drive">I'm a driver</button>
+          </div>
+          <div class="trust-row"><span>✓ Verified drivers</span><span>✓ Clear ride status</span><span>✓ Local-first</span></div>
+        </div>
+        <div class="hero-art" aria-label="Auto rickshaw illustration">
+          <div class="sun-disc"></div>
+          <div class="route route-one"></div><div class="route route-two"></div>
+          <div class="art-pin"><span>●</span></div>
+          <div class="auto-illustration">
+            <div class="auto-roof"></div><div class="auto-body"><div class="auto-window"></div><div class="auto-front"></div><div class="auto-lamp"></div></div>
+            <div class="auto-wheel wheel-a"></div><div class="auto-wheel wheel-b"></div><div class="auto-wheel wheel-c"></div>
+          </div>
+          <div class="art-label"><span class="label-icon">↗</span><span><b>Made for local journeys</b><small>One simple connection at a time</small></span></div>
+        </div>
+      </div>
+      <div class="feature-strip">
+        <div><span class="feature-icon">⌖</span><span><b>Choose your pickup</b><small>GPS or enter it yourself</small></span></div>
+        <div><span class="feature-icon">↔</span><span><b>Track ride progress</b><small>Follow the ride status</small></span></div>
+        <div><span class="feature-icon">♧</span><span><b>Built with safety in mind</b><small>Driver review and ride reports</small></span></div>
+      </div>
+    </section>
+
+    <section id="auth-view" class="auth-layout hidden">
+      <div class="auth-side">
+        <img src="./assets/autosetu-logo.svg" alt="" class="auth-logo">
+        <p class="eyebrow">WELCOME TO AUTOSETU</p><h2>A better way to get there.</h2>
+        <p>Create an account with your email and password. We’ll send a verification link to your inbox.</p>
+        <div class="auth-note">🔒 Email verification helps protect your account. No phone number is required.</div>
+      </div>
+      <div class="auth-card">
+        <button class="back-link" id="auth-back">← Back to home</button>
+        <div class="auth-tabs"><button id="auth-tab-login" class="btn btn-primary" type="button">Log in</button><button id="auth-tab-signup" class="btn btn-outline" type="button">Create account</button></div>
+        <h2 id="auth-title">Log in to AutoSetu</h2><p class="muted" id="auth-subtitle">Use your verified email and password.</p>
+        <form id="email-auth-form" class="stack-form">
+          <div id="signup-fields" class="hidden">
+            <label for="auth-name">Full name</label><input id="auth-name" maxlength="100" autocomplete="name" placeholder="Your name">
+          </div>
+          <label for="auth-email">Email address</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+          <label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required>
+          <div id="signup-role-wrap" class="hidden"><label for="auth-role">I want to use AutoSetu as</label><select id="auth-role"><option value="passenger">Passenger</option><option value="driver">Driver</option></select></div>
+          <button class="btn btn-primary full" id="auth-submit" type="submit">Log in</button>
+        </form>
+        <p id="auth-message" class="notice hidden" role="status"></p>
+        <p class="fine-print">Your email is used for account verification and password recovery. Never share your password or verification link.</p>
+      </div>
+    </section>
+
+    <section id="profile-view" class="panel narrow hidden">
+      <div class="section-heading"><span class="eyebrow">ONE QUICK STEP</span><h2>Set up your profile</h2><p>Tell us how you'll use AutoSetu.</p></div>
+      <form id="profile-form" class="form-grid">
+        <label>Full name<input id="profile-name" maxlength="100" required placeholder="Your name"></label>
+        <label>Account type<select id="profile-role" required><option value="passenger">Passenger</option><option value="driver">Driver</option></select></label>
+        <label class="full-span">Email<input id="profile-email" type="email" readonly></label>
+        <button class="btn btn-primary full-span" type="submit">Save and continue</button>
+      </form>
+      <p class="muted small">Driver accounts need administrator approval before they can accept rides.</p>
+    </section>
+
+    <section id="dashboard-view" class="dashboard hidden">
+      <div class="welcome-row"><div><span class="eyebrow" id="role-kicker">YOUR AUTOSETU</span><h1 id="welcome-title">Welcome back</h1><p class="muted" id="welcome-subtitle">Your local ride dashboard.</p></div><span class="role-pill" id="role-pill">Passenger</span></div>
+      <div id="dashboard-content"></div>
+    </section>
+
+    <section id="how-it-works" class="info-section">
+      <div class="section-heading"><span class="eyebrow">HOW IT WORKS</span><h2>Local travel, without the fuss.</h2></div>
+      <div class="steps-grid"><article class="step-card"><span>01</span><h3>Create an account</h3><p>Choose a username, password and role.</p></article><article class="step-card"><span>02</span><h3>Choose your journey</h3><p>Enter pickup and destination details.</p></article><article class="step-card"><span>03</span><h3>Connect and go</h3><p>A driver can accept your request and update the ride status.</p></article></div>
+    </section>
+    <section id="safety" class="safety-band"><div><span class="eyebrow">SAFETY FIRST</span><h2>Know who you're riding with.</h2><p>Check driver verification status, keep your ride details handy, and report concerns from your dashboard.</p></div><div class="safety-emergency"><small>Emergency in India</small><strong>112</strong><span>Call local emergency services directly when needed.</span></div></section>
+  </main>
+  <footer><a class="brand footer-brand" href="#"><img src="./assets/autosetu-logo.svg" alt=""><span><strong>AutoSetu</strong><small>Your Local Ride, Connected.</small></span></a><span>© <span id="year"></span> AutoSetu · Local journeys, connected.</span><a href="#safety">Safety information</a></footer>
+  <div id="toast" class="toast hidden" role="status"></div>
+</body>
+</html>
